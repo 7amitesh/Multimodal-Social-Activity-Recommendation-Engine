@@ -1,7 +1,104 @@
-# Multimodal Social Activity Recommendation Engine  
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-API-green)
+![Docker](https://img.shields.io/badge/Docker-ready-blue)
+![HuggingFace](https://img.shields.io/badge/Transformers-CLIP-orange)
 
-A recommendation engine that leverages **multimodal embeddings (text + images)** using CLIP and FAISS to suggest real-world activities like sports, yoga, and events, served through a FastAPI microservice.
+# Multimodal Social Activity Recommendation Engine 🏋️🎶📸
 
+Recommend real-world activities (sports, yoga, events) from **images + text** using **CLIP** embeddings and **FAISS** similarity search.  
+FastAPI microservice exposes `/recommend/text` and `/recommend/image`.
+
+---
+
+## ⚙️ Stack
+- **Embeddings:** `sentence-transformers` (`clip-ViT-B-32`) for text & images  
+- **Vector search:** `faiss-cpu`  
+- **API:** FastAPI + Uvicorn  
+- **Deployment:** Docker-ready  
+
+---
+
+## 🚀 Quickstart
+
+```bash
+# 1) Create virtual environment
+python -m venv .venv && source .venv/bin/activate
+
+# 2) Install dependencies
+pip install -r requirements.txt
+
+# 3) Add datasets (Stanford-40, Yoga-82, etc.)
+#    Expected format: data/raw/<label_name>/*.jpg
+#    Example: data/raw/yoga_pose/img1.jpg
+
+# 4) Build index
+python scripts/build_index.py
+
+# 5) Run API
+uvicorn app.main:api --reload --port 8000
+````
+
+---
+
+## 🧪 Example Usage
+
+### Text recommendation
+
+```bash
+curl -X POST "http://localhost:8000/recommend/text" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "beginner yoga class for weekends in Bangalore", "k": 5}'
+```
+
+### Image recommendation
+
+```bash
+curl -X POST "http://localhost:8000/recommend/image?k=5" \
+  -F "file=@/path/to/yoga_pose.jpg"
+```
+
+---
+
+## 🐳 Docker
+
+```bash
+docker build -t multimodal-recsys .
+docker run -p 8000:8000 multimodal-recsys
+```
+
+---
+
+## 📂 Data Layout
+
+```
+data/
+  raw/
+    yoga/
+      img001.jpg
+      ...
+    playing_guitar/
+      ...
+  processed/
+    embeddings.faiss
+    items.json
+```
+
+> Extend `items.json` with metadata (city, price, schedule, etc.) to enable filtered recommendations.
+
+---
+
+## 🔑 TL;DR
+
+1. Put labeled images in `data/raw/<label>/...jpg`
+2. Run: `python scripts/build_index.py` → creates `data/processed/embeddings.faiss` + `items.json`
+3. Start API: `uvicorn app.main:api --port 8000`
+4. Query endpoints:
+
+   * `POST /recommend/text` → `{"query":"suggest weekend dance classes in Bangalore","k":5}`
+   * `POST /recommend/image` → file upload
+
+```
+```
 
 
 ---
@@ -328,95 +425,6 @@ if __name__ == "__main__":
     build_index(raw_dir=raw, out_dir=out, model_name="clip-ViT-B-32", batch_size=32)
 ```
 
----
-
-## 📘 `README.md`
-
-````markdown
-# Multimodal Social Activity Recommendation Engine 🏋️🎶📸
-
-Recommend real-world activities (sports, yoga, events) from **images + text** using **CLIP** embeddings and **FAISS** similarity search.  
-FastAPI microservice exposes `/recommend/text` and `/recommend/image`.
-
-## Stack
-- Embeddings: `sentence-transformers` (`clip-ViT-B-32`) for text & images
-- Vector search: `faiss-cpu`
-- API: FastAPI + Uvicorn
-- Docker-ready
-
-## Quickstart
-
-```bash
-# 1) install
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-# 2) add datasets (Stanford-40, Yoga-82, etc.)
-#    expected shape: data/raw/<label_name>/*.jpg
-#    e.g., data/raw/yoga_pose/img1.jpg
-
-# 3) build index
-python scripts/build_index.py
-
-# 4) run api
-uvicorn app.main:api --reload --port 8000
-````
-
-### Example: Text recommendation
-
-```bash
-curl -X POST "http://localhost:8000/recommend/text" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "beginner yoga class for weekends in Bangalore", "k": 5}'
-```
-
-### Example: Image recommendation
-
-```bash
-curl -X POST "http://localhost:8000/recommend/image?k=5" \
-  -F "file=@/path/to/yoga_pose.jpg"
-```
-
-## Docker
-
-```bash
-docker build -t multimodal-recsys .
-docker run -p 8000:8000 multimodal-recsys
-```
-
-## Data layout
-
-```
-data/
-  raw/
-    yoga/
-      img001.jpg
-      ...
-    playing_guitar/
-      ...
-  processed/
-    embeddings.faiss
-    items.json
-```
-
-> You can extend `items.json` with metadata such as city, price, or schedule to filter results later.
-
-```
-
----
-
-## how to use (TL;DR)
-
-1) Put labeled images into `data/raw/<label>/...jpg`.  
-2) `python scripts/build_index.py` → creates `data/processed/embeddings.faiss` + `items.json`.  
-3) `uvicorn app.main:api --port 8000`  
-4) Hit:
-   - `POST /recommend/text` with `{"query":"suggest weekend dance classes in Bangalore","k":5}`
-   - `POST /recommend/image` with a file upload.
-
----
-
-If you want, I can also add:
 - **filters** (e.g., city=“Bangalore”) by enriching `items.json` with metadata and adding query params.
 - **re-ranking** (BM25 on event descriptions + CLIP fusion).
 - **front-end demo** (minimal React page) to impress recruiters.
